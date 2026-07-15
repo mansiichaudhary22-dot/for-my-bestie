@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Bestie!</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background-color: #0f0c1b; color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; transition: opacity 0.5s ease; z-index: 10; }
+        .hidden { opacity: 0; pointer-events: none; z-index: 1; }
+        #lock-screen { background: linear-gradient(135deg, #1f1a3a, #0f0c1b); }
+        .lock-container { text-align: center; background: rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); width: 320px; }
+        .lock-container h2 { font-size: 24px; margin-bottom: 10px; color: #ff79c6; }
+        .lock-container input { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #ff79c6; background: rgba(0,0,0,0.3); color: #fff; font-size: 18px; text-align: center; margin-bottom: 15px; outline: none; }
+        .lock-container button { background: #ff79c6; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; }
+        .error-msg { color: #ff5555; font-size: 14px; margin-top: 10px; display: none; }
+        #dashboard-screen { background: #120e24; overflow-y: auto; justify-content: flex-start; padding-top: 40px; }
+        .dashboard-title h2 { text-align: center; font-size: 20px; color: #8be9fd; margin-bottom: 30px; padding: 0 10px; line-height: 1.4; }
+        .boxes-container { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 360px; }
+        .gift-box-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; }
+        .gift-icon { font-size: 40px; margin-bottom: 8px; display: inline-block; }
+        .gift-box-card h3 { font-size: 18px; color: #ffb86c; margin-bottom: 5px; }
+        .gift-box-card p { font-size: 13px; color: #ccc; line-height: 1.4; }
+        #show-screen { background: #000; padding: 0; }
+        .slide-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        .media-slide { position: absolute; width: 100%; height: 100%; opacity: 0; transition: opacity 0.8s ease; display: flex; flex-direction: column; justify-content: center; z-index: 1; }
+        .media-slide.active { opacity: 1; z-index: 5; }
+        .media-slide img, .media-slide video { width: 100%; height: 100%; object-fit: contain; }
+        .caption-box { position: absolute; bottom: 40px; left: 5%; width: 90%; background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 12px; text-align: center; z-index: 10; }
+        .caption-box p { font-size: 14px; line-height: 1.5; color: #fff; white-space: pre-line; }
+        .back-btn { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; z-index: 100; }
+        #wish-screen { position: absolute; width: 100%; height: 100%; background: #000; overflow: hidden; }
+        .wish-bg { position: absolute; width: 100%; height: 100%; background-image: url('photo.jpg'); background-size: cover; background-position: center; filter: blur(8px) brightness(0.4); transform: scale(1.05); z-index: 1; }
+        .wish-content-wrapper { position: relative; width: 100%; height: 100%; z-index: 5; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+        .scroller-container { width: 100%; max-width: 500px; height: 80%; overflow-y: auto; scrollbar-width: none; margin-top: 20px; }
+        .scroller-container::-webkit-scrollbar { display: none; }
+        .wish-text { font-size: 16px; line-height: 1.8; color: #f0f0f0; text-align: center; white-space: pre-line; padding-bottom: 100px; }
+        .wish-text h1 { font-size: 26px; color: #ff79c6; margin-bottom: 25px; }
+        .confetti { position: absolute; width: 10px; height: 10px; z-index: 99; opacity: 0.8; border-radius: 50%; animation: fall linear forwards; }
+        @keyframes fall { 0% { transform: translateY(-50px); opacity: 1; } 100% { transform: translateY(105vh); opacity: 0; } }
+    </style>
+</head>
+<body>
+    <audio id="audio-bg" src="emotional_bg_track.mp3" preload="auto"></audio>
+    <audio id="audio-special" src="special_song_track.mp3" preload="auto"></audio>
+    <audio id="audio-hbd" src="happy_birthday_track.mp3" preload="auto" loop></audio>
+
+    <div id="lock-screen" class="screen">
+        <div class="lock-container">
+            <h2>🔒 Locked for Bestie</h2>
+            <p>Enter the special 4-digit code to unlock your surprise!</p>
+            <input type="password" id="password-input" maxlength="4" placeholder="••••">
+            <button onclick="checkPassword()">Unlock Magic ✨</button>
+            <div id="error-message" class="error-msg">Galat password! Dobara socho 🤔</div>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="screen hidden">
+        <div class="dashboard-title">
+            <h2>Kuch boxes mein yaadein hain, kuch mein masti... par ek box mein chhupi hai tumhari sabse special surprise! Kya tum taiyar ho? 😉✨</h2>
+        </div>
+        <div class="boxes-container">
+            <div class="gift-box-card" onclick="openBox(1)">
+                <span class="gift-icon">🎁</span>
+                <h3>Box 1: The Baddie Files</h3>
+                <p>Warning: Inside this box, you'll find a lethal dose of unfiltered drama, excessive gorgeousness, and pure madness! 😉🔥</p>
+            </div>
+            <div class="gift-box-card" onclick="openBox(2)">
+                <span class="gift-icon">🛍️</span>
+                <h3>Box 2: Warning: High Voltage Vibe</h3>
+                <p>Zyada cute banna bhi sehat ke liye theek nahi... Tap at your own risk! 😜💣</p>
+            </div>
+            <div class="gift-box-card" onclick="openBox(3)">
+                <span class="gift-icon">💝</span>
+                <h3>Box 3: The Ultimate Surprise</h3>
+                <p>Sirf aur sirf tumhare liye... A deeply special gift from the bottom of my heart! 👩‍❤️‍👩❤️</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="show-screen" class="screen hidden">
+        <button class="back-btn" onclick="exitShow()">Back to Boxes ↩</button>
+        <div class="slide-container" id="slide-wrapper"></div>
+    </div>
+
+    <div id="wish-screen" class="screen hidden">
+        <div class="wish-bg"></div>
+        <button class="back-btn" onclick="exitWish()">Back ↩</button>
+        <div class="wish-content-wrapper">
+            <div class="scroller-container">
+                <div class="wish-text">
+                    <h1>🎉 HAPPY BIRTHDAY MY BETTER HALF! 🎂</h1>
+                    <p id="birthday-wish-paragraph"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const correctPassword = "1018";
+        const box1Slides = [
+            { type: 'image', src: 'photo1.jpg', caption: 'Blue never looked this beautiful. 💙\nConfidence in every step,\ngrace in every smile,\nand beauty that speaks for itself. 🌸' },
+            { type: 'image', src: 'photo2.jpg', caption: 'Beautiful inside,\nstunning outside,\nand unforgettable all around. ✨' },
+            { type: 'image', src: 'photo3.jpg', caption: 'A beautiful face catches the eye,\nbut a beautiful soul captures the heart.\nYou have both. 🤍' },
+            { type: 'video', src: 'video1.mp4', caption: 'Sheesha bhi aaj kal confuse rehta hoga,\ndekhna kise hai... ya sharmana khud hai. 🤍💝🫶\n\nNazar lagne ka darr to mujhe bhi hai,\nitni baar dekhu bhi na kaise?\nMashallah... kya hi noor hai. ✨👀🤌' },
+            { type: 'image', src: 'photo4.jpg', caption: 'itnii khoobsuratii bhi thik nahii wrna kahi kisi ki nazar na fisal jayee 👀🙈✨️' },
+            { type: 'video', src: 'video2.mp4', caption: "Not everyone's type. Just the right one's.\nPretty with a side of attitude. 😎" }
+        ];
+        const box2Slides = [
+            { type: 'image', src: 'photo5.jpg', caption: 'Zyada cute banna bhi sehat ke liye theek nahi.\nRoz kisi na kisi ka dil le jaati ho.\nKabhi to reham kar diya karo...yaa jaan lekr jane ka irada haii janab😜💣🫦' },
+            { type: 'video', src: 'video3.mp4', caption: 'Cute enough to steal hearts🧡🩵\nBold enough to break standards.😚🫠' }
+        ];
+        const wishText = `So, finally today is the day when your mother gifted me a gorgeous and amzing girl in the form of you🧿👩‍❤️‍👩.
+
+What do you mean to me i can't wrape those emotions in just few silly words 🥲.
+
+I never going to say that you are mine instead I can say proudly-"jesi bhi hu bas aapki hoon"🌼🫶.
+
+Tum ho toh bs mein hoonn..!!🙂‍↔️✨💝
+
+Ye jahan tujhe kis nzr se dekhta haii I really don't care 😌, I only know one thing that tu meri soulmate haii aur wo hmesa sahi haii🧿❤️‍🩹.
+
+Mujhse koi puchhe toh- "Tumsa Koi Pyara Koi Masoom Nahi Hai, Tum Jaan Ho Meri Khud Tumhe Malum Nahi Haii"🔥💋🌷🌝.
+
+Tu merii chulbuliii, chatapatii atomic bomb haii 😉😃💜.
+
+Aur tera day special n bne esa ho hi nahi saktaa🫡🧡
+
+Tu seriously bht special h bro🧿
+M sch m tujhe ek esi peak p dekhna chahtii hu jha bs khushiyan hi khushiyan ho tere pas💝🤗.
+
+Shrii jii hmesa tujhe buri nzr se bcha kr rkhee🧿💫
+
+Hmesa tujhe wo sb mile jo tu sach m deserve krtii haiii...an ocean of happiness and blessings..spicyy enjoyment...baddiee crazyness..lot of memories 😇🤪🫠🌼.
+
+With the beneath of my heart wishing 
+You the most auspicious, generous, healthy, blessed and cheerful best born dayy my better half🤞🫂💋👩‍❤️‍👩💘`;
+
+        document.getElementById('birthday-wish-paragraph').innerText = wishText;
+        let currentSlideIndex = 0, slideInterval = null, activeSlides = [];
+        const audioBg = document.getElementById('audio-bg'), audioSpecial = document.getElementById('audio-special'), audioHbd = document.getElementById('audio-hbd');
+
+        function stopAllAudio() { [audioBg, audioSpecial, audioHbd].forEach(t => { t.pause(); t.currentTime = 0; }); }
+        function checkPassword() {
+            if(document.getElementById('password-input').value === correctPassword) {
+                document.getElementById('lock-screen').classList.add('hidden');
+                document.getElementById('dashboard-screen').classList.remove('hidden');
+                makeConfetti(30);
+            } else {
+                document.getElementById('error-message').style.display = 'block';
+                setTimeout(() => document.getElementById('error-message').style.display = 'none', 3000);
+            }
+        }
+        function makeConfetti(count) {
+            const colors = ['#ff79c6', '#8be9fd', '#50fa7b', '#ffb86c'];
+            for(let i=0; i<count; i++) {
+                const c = document.createElement('div'); c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw'; c.style.top = '-20px';
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.width = c.style.height = Math.random() * 8 + 6 + 'px';
+                c.style.animationDuration = Math.random() * 2 + 1.5 + 's';
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 3500);
+            }
+        }
+        function openBox(num) {
+            makeConfetti(40); stopAllAudio();
+            if(num === 1) {
+                activeSlides = box1Slides; setupSlides(); audioBg.play().catch(e=>{});
+                document.getElementById('dashboard-screen').classList.add('hidden');
+                document.getElementById('show-screen').classList.remove('hidden');
+                startSlideShow(6500);
+            } else if(num === 2) {
+                activeSlides = box2Slides; setupSlides(); audioSpecial.play().catch(e=>{});
+                document.getElementById('dashboard-screen').classList.add('hidden');
+                document.getElementById('show-screen').classList.remove('hidden');
+                startSlideShow(8000);
+            } else if(num === 3) {
+                audioHbd.play().catch(e=>{});
+                document.getElementById('dashboard-screen').classList.add('hidden');
+                document.getElementById('wish-screen').classList.remove('hidden');
+                this.wishConfetti = setInterval(() => makeConfetti(10), 1000);
+            }
+        }
+        function setupSlides() {
+            const w = document.getElementById('slide-wrapper'); w.innerHTML = '';
+            activeSlides.forEach((s, idx) => {
+                const d = document.createElement('div'); d.className = `media-slide ${idx === 0 ? 'active' : ''}`;
+                if(s.type === 'image') { d.innerHTML = `<img src="${s.src}"><div class="caption-box"><p>${s.caption}</p></div>`; }
+                else { d.innerHTML = `<video src="${s.src}" loop muted playsinline autoplay></video><div class="caption-box"><p>${s.caption}</p></div>`; }
+                w.appendChild(d);
+            });
+            currentSlideIndex = 0;
+        }
+        function startSlideShow(dur) {
+            if(slideInterval) clearInterval(slideInterval);
+            slideInterval = setInterval(() => {
+                const s = document.querySelectorAll('.media-slide'); if(s.length === 0) return;
+                s[currentSlideIndex].classList.remove('active'); currentSlideIndex++;
+                if(currentSlideIndex >= s.length) { clearInterval(slideInterval); setTimeout(exitShow, 1500); return; }
+                s[currentSlideIndex].classList.add('active');
+            }, dur);
+        }
+        function exitShow() { if(slideInterval) clearInterval(slideInterval); stopAllAudio(); document.getElementById('show-screen').classList.add('hidden'); document.getElementById('dashboard-screen').classList.remove('hidden'); }
+        function exitWish() { if(this.wishConfetti) clearInterval(this.wishConfetti); stopAllAudio(); document.getElementById('wish-screen').classList.add('hidden'); document.getElementById('dashboard-screen').classList.remove('hidden'); }
+    </script>
+</body>
+</html>
